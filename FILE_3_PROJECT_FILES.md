@@ -1,355 +1,284 @@
 # azooKey Application Architecture
 
-This document provides an architectural view of the azooKey application, organized to mirror how the application is represented from both a user and developer perspective. The application is split into two main views: **Keyboard** and **App**.
+This document provides a visual architectural map of the azooKey application to help you understand how features are organized and connected.
 
 ---
 
-## Keyboard View Architecture
-
-The keyboard extension is the core input interface that users interact with when typing. It's a complex system comprising several layers and features.
-
-### 🎨 Visual & Presentation Layer
-
-#### **Keyboard UI Components** (`AzooKeyCore/Sources/KeyboardViews/`)
-The visual representation of the keyboard that users see and touch.
-
-**Key Components:**
-- **Key Views** - Individual key buttons with various styles and states
-- **Key Layouts** - Different keyboard layouts (QWERTY, custom, emoji, etc.)
-- **Result Bar** - Conversion candidate display above the keyboard
-- **Cursor Bar** - Precise text cursor control (activated via long-press space)
-- **Tab Bar** - Quick access to custom tabs and settings (azooKey icon button)
-
-**Supporting Infrastructure:**
-- `KeyboardViewController.swift` - Main entry point, orchestrates the entire keyboard UI
-- Theme system for visual customization
-- SwiftUI-based modern responsive interface
-
----
-
-### ⌨️ Custom Keyboard System
-
-#### **Custom Keyboards** (`MainApp/Customize/`, `CustardKit`)
-Users can create fully customized keyboard layouts with their own keys and behaviors.
-
-**Features:**
-- **Custom Tabs** - Multiple user-defined keyboard layouts
-- **Custom Keys** - User-defined keys with custom actions and labels
-- **Key Names** - Customizable key labels and symbols
-- **Import/Export** - Share and load custom keyboard configurations
-- **Flick Keys** - Custom flick input patterns for advanced users
-
-**Implementation:**
-- `CustardManager.swift` - Manages custom keyboard definitions
-- `UserMadeCustard.swift` - User-created keyboard data structures
-
----
-
-### 😀 Emoji & Special Characters
-
-#### **Emoji Keyboard**
-Dedicated emoji and kaomoji input interface.
-
-**Features:**
-- Emoji picker with categories
-- Kaomoji (顔文字) support
-- Recent and frequently used tracking
-- Search functionality
-
-**Data:**
-- `azooKey_emoji_dictionary_storage/` - Emoji dictionary submodule
-- Emoji conversion and suggestions
-
----
-
-### 🌍 Localization System
-
-#### **Multi-language Support** (`Resources/Localizable.xcstrings`)
-The keyboard interface is available in multiple languages.
-
-**Components:**
-- Localized UI strings for all keyboard elements
-- Language-specific key layouts
-- Culturally appropriate input methods
-- `InfoPlist.xcstrings` - Localized system strings
-
----
-
-### 🧠 Input & Intelligence Layer
-
-This is where the "magic" happens - converting user input into meaningful text.
-
-#### **Input Management** (`Keyboard/Display/InputManager.swift`)
-The brain of text input and conversion.
-
-**Responsibilities:**
-- Raw input processing (romaji → kana)
-- Composition state management
-- Interaction with conversion engine
-- Text buffer management
-
----
-
-#### **Prediction Layer** (`Keyboard/Display/PredictionManager.swift`)
-**Pre-Composition Prediction** - Suggestions before conversion
-
-**Features:**
-- Context-aware word suggestions
-- Dictionary-based predictions
-- Learning from user input patterns
-- Frequency-based ranking
-
----
-
-#### **Conversion Engine** (Neural Kana-Kanji Conversion)
-**The Core Intelligence** - Powered by Zenzai neural network
-
-**Components:**
-- `zenz-v3.1-small-gguf/` and `zenz-v3.1-xsmall-gguf/` - Neural models
-- `Keyboard/Dictionary/louds/` - LOUDS dictionary data structure
-- `azooKey_dictionary_storage/` - Dictionary data submodule
-- External package: `AzooKeyKanaKanjiConverter`
-
-**What it does:**
-- Converts kana input to kanji with high accuracy
-- Understands context and grammar
-- Learns from user corrections
-- Multiple conversion candidates
-
----
-
-#### **Post-Prediction Layer** (Post-Composition Prediction)
-**After confirmation** - Suggestions for what comes next
-
-**Features:**
-- Next word prediction after confirming text
-- Context-aware suggestions based on just-entered text
-- Phrase completion
-- Learned patterns from user behavior
-
----
-
-#### **Live Conversion** (`Keyboard/Display/LiveConversionManager.swift`)
-**Real-time automatic conversion** as you type (ライブ変換)
-
-**Behavior:**
-- Automatically converts input to kanji without explicit conversion key presses
-- Fluid typing experience
-- Toggleable in settings
-
----
-
-### 🎯 Action & Behavior Layer
-
-#### **Action Management** (`Keyboard/Display/KeyboardActionManager.swift`)
-Handles all user interactions and coordinates keyboard behavior.
-
-**Responsibilities:**
-- Key press handling
-- Touch gesture processing
-- Action coordination between components
-- State management across the keyboard
-
----
-
-### 🎨 Theme & Styling Layer
-
-#### **Keyboard Themes** (`AzooKeyCore/Sources/KeyboardThemes/`)
-Visual customization system for keyboard appearance.
-
-**Components:**
-- Color schemes
-- Key styling (borders, shadows, gradients)
-- Background options
-- Pre-built and custom themes
-
-**Resources:**
-- `Resources/Designs.xcassets/` - Theme colors and assets
-- `Resources/AzooKeyIcon-Regular.otf` - Custom icon font
-
----
-
-### 📋 Additional Features
-
-#### **Clipboard History**
-Store and recall previously copied text.
-
-#### **Text Editing**
-Advanced cursor movement and text selection tools.
-
-#### **Error Reporting** (`ReportSubmissionHelper.swift`)
-Diagnostic and error reporting capabilities.
-
----
-
-## App View Architecture
-
-The main application (MainApp) is the settings and configuration hub where users customize their keyboard experience.
-
-### ⚙️ Settings & Configuration Layer
-
-#### **General Settings** (`MainApp/Setting/`, `MainApp/General/`)
-Core keyboard behavior configuration.
-
-**Features:**
-- Input method selection (romaji, direct kana)
-- Keyboard layout preferences
-- Feature toggles
-- Behavior customization
-
----
-
-#### **Theme Management** (`MainApp/Theme/`)
-Visual customization interface.
-
-**Features:**
-- Theme selection
-- Color customization
-- Preview functionality
-- Save and manage custom themes
-
----
-
-#### **Custom Keyboard Builder** (`MainApp/Customize/`)
-Interface for creating and managing custom keyboards.
-
-**Features:**
-- Visual keyboard layout editor
-- Key configuration
-- Tab management
-- Import/export custom layouts
-
----
-
-### 📊 Data Management Layer
-
-#### **Dictionary Updates** (`MainApp/DataUpdateView/`)
-Keep conversion dictionaries current.
-
-**Features:**
-- Check for dictionary updates
-- Download and install new dictionary data
-- Version management
-
-#### **User Data** (`MainApp/DataSet/`)
-Manage user-specific data and learning.
-
-**Features:**
-- User dictionary entries
-- Learning data management
-- Backup and restore
-- Data reset options
-
----
-
-### 🎓 Onboarding & Help Layer
-
-#### **Keyboard Setup** (`MainApp/EnableAzooKeyView/`)
-Tutorial for enabling the keyboard extension.
-
-**Features:**
-- Step-by-step installation guide
-- System settings navigation
-- Verification of successful installation
-
-#### **Tips & Help** (`MainApp/Tips/`)
-User guidance and feature discovery.
-
-**Features:**
-- Feature explanations
-- Usage tips
-- Helpful hints for new users
-
-#### **Update Information** (`UpdateInformationView.swift`)
-Changelog and version history.
-
----
-
-### 🔧 Developer & Internal Settings
-
-#### **Internal Settings** (`MainApp/InternalSetting/`)
-Advanced options for developers and power users.
-
-**Features:**
-- Debug options
-- Experimental features
-- Performance metrics
-- Detailed configuration
-
----
-
-## Shared Core Infrastructure
-
-### 🎁 AzooKeyCore Package
-
-A Swift Package containing shared functionality between keyboard and app.
-
-**Modules:**
-- `KeyboardViews/` - Shared UI components
-- `KeyboardThemes/` - Theme system
-- `KeyboardExtensionUtils/` - Keyboard utilities
-- `AzooKeyUtils/` - General utilities
-- `SwiftUIUtils/` - SwiftUI helpers
-
----
-
-## Data Flow Summary
+## 🗺️ Visual Architecture Map
 
 ```
-User Input (Key Press)
-    ↓
-KeyboardActionManager (Action Processing)
-    ↓
-InputManager (Input Processing)
-    ↓
-┌─────────────────────────────────────┐
-│  Prediction Layer (Pre-composition)  │ ← Dictionary Data
-└─────────────────────────────────────┘
-    ↓
-LiveConversionManager (Optional real-time conversion)
-    ↓
-Neural Conversion Engine (Kana → Kanji)
-    ↓
-Candidate Display (Result Bar)
-    ↓
-User Selection
-    ↓
-┌─────────────────────────────────────┐
-│ Post-Prediction Layer (Next word)    │ ← Learning Data
-└─────────────────────────────────────┘
-    ↓
-Text Output (To Application)
+azooKey Application
+├── 📱 MAIN APP (Settings & Configuration Hub)
+│   ├── ⚙️ Settings & Configuration
+│   │   ├── General Settings (input methods, keyboard behavior)
+│   │   ├── Theme Management (colors, visual customization)
+│   │   └── Custom Keyboard Builder (create/edit custom layouts)
+│   │
+│   ├── 📊 Data Management
+│   │   ├── Dictionary Updates (download/install new dictionaries)
+│   │   └── User Data (user dictionary, learning data, backup/restore)
+│   │
+│   ├── 🎓 User Guidance
+│   │   ├── Keyboard Setup Tutorial (installation guide)
+│   │   ├── Tips & Help (feature explanations)
+│   │   └── Update Information (changelog)
+│   │
+│   └── 🔧 Developer Settings (debug, experimental features)
+│
+└── ⌨️ KEYBOARD EXTENSION (The Input Interface)
+    │
+    ├── 🎨 VISUAL LAYER (What You See)
+    │   ├── Key Views (individual buttons, styles, states)
+    │   ├── Key Layouts
+    │   │   ├── QWERTY Layout
+    │   │   ├── Custom Layouts (user-created)
+    │   │   └── Emoji Keyboard
+    │   ├── Result Bar (candidate suggestions above keyboard)
+    │   ├── Cursor Bar (long-press space for precise editing)
+    │   ├── Tab Bar (azooKey icon → custom tabs & settings)
+    │   └── Themes (colors, fonts, styling)
+    │
+    ├── ⌨️ CUSTOM KEYBOARD SYSTEM
+    │   ├── Custom Tabs (multiple custom layouts)
+    │   ├── Custom Keys (user-defined actions & labels)
+    │   ├── Key Names (customizable text/symbols)
+    │   ├── Flick Keys (swipe patterns)
+    │   └── Import/Export (share layouts)
+    │
+    ├── 😀 EMOJI & SPECIAL INPUT
+    │   ├── Emoji Picker (categories, search)
+    │   ├── Kaomoji (Japanese emoticons)
+    │   └── Recent/Frequent Tracking
+    │
+    ├── 🌍 LOCALIZATION
+    │   ├── Multi-language UI
+    │   ├── Language-specific Layouts
+    │   └── Localized Strings
+    │
+    ├── 🧠 INPUT INTELLIGENCE (The Brain)
+    │   │
+    │   ├── [1] INPUT MANAGER
+    │   │   ├── Raw Input Processing (romaji → kana)
+    │   │   ├── Composition State Management
+    │   │   └── Text Buffer Management
+    │   │       ↓
+    │   ├── [2] PREDICTION LAYER (Before Conversion)
+    │   │   ├── Pre-composition Suggestions
+    │   │   ├── Context-aware Predictions
+    │   │   ├── Dictionary-based Suggestions
+    │   │   └── Frequency Ranking
+    │   │       ↓
+    │   ├── [3] LIVE CONVERSION (Optional Real-time)
+    │   │   └── Automatic Kana→Kanji as you type
+    │   │       ↓
+    │   ├── [4] CONVERSION ENGINE (Neural AI)
+    │   │   ├── Neural Models (Zenzai v3.1)
+    │   │   ├── Dictionary Data (LOUDS structure)
+    │   │   ├── Grammar Understanding
+    │   │   └── Multiple Candidates
+    │   │       ↓
+    │   ├── [5] CANDIDATE DISPLAY
+    │   │   └── Show conversion options in Result Bar
+    │   │       ↓
+    │   └── [6] POST-PREDICTION LAYER (After Confirmation)
+    │       ├── Next Word Suggestions
+    │       ├── Phrase Completion
+    │       ├── Context from Just-entered Text
+    │       └── Learning from User Patterns
+    │
+    ├── 🎯 ACTION LAYER (User Interactions)
+    │   ├── Key Press Handling
+    │   ├── Touch Gesture Processing
+    │   ├── Action Coordination
+    │   └── State Management
+    │
+    └── 📋 ADDITIONAL FEATURES
+        ├── Clipboard History
+        ├── Advanced Text Editing
+        └── Error Reporting
+
+🔗 SHARED INFRASTRUCTURE
+    └── AzooKeyCore Package
+        ├── KeyboardViews (shared UI components)
+        ├── KeyboardThemes (theme system)
+        ├── KeyboardExtensionUtils (keyboard utilities)
+        ├── AzooKeyUtils (general utilities)
+        └── SwiftUIUtils (SwiftUI helpers)
 ```
 
 ---
 
-## Technology Stack
+## 🔄 Data Flow: From Key Press to Text Output
 
-- **Language:** Swift, SwiftUI
-- **Platform:** iOS, iPadOS
-- **Architecture:** App Extension + Main App
-- **AI/ML:** Neural network (Zenzai) for conversion
-- **Data Structures:** LOUDS for efficient dictionary lookups
-- **Package Management:** Swift Package Manager
-- **Build System:** Xcode
+```
+     USER TAPS KEY
+           ↓
+    ┌──────────────┐
+    │ Action Layer │ ← Handles touch/gesture
+    └──────────────┘
+           ↓
+    ┌──────────────┐
+    │Input Manager │ ← Processes input (e.g., "k" + "a" → "か")
+    └──────────────┘
+           ↓
+    ┌───────────────────┐
+    │ Prediction Layer  │ ← Suggests words BEFORE conversion
+    │  (Pre-composition)│   "か" → suggests "家", "傘", "書く"
+    └───────────────────┘
+           ↓
+    ┌────────────────────┐
+    │ Live Conversion    │ ← Optional: auto-convert in real-time
+    │   (if enabled)     │
+    └────────────────────┘
+           ↓
+    ┌────────────────────┐
+    │ Conversion Engine  │ ← Neural AI converts kana to kanji
+    │   (Neural Zenzai)  │   "かいぎ" → "会議", "会義", "開議"
+    └────────────────────┘
+           ↓
+    ┌────────────────────┐
+    │ Candidate Display  │ ← Shows options in Result Bar
+    │   (Result Bar)     │   User sees: [会議] [会義] [開議]
+    └────────────────────┘
+           ↓
+      USER SELECTS ✓
+           ↓
+    ┌────────────────────┐
+    │Text Confirmed: 会議│ ← Inserted into app
+    └────────────────────┘
+           ↓
+    ┌─────────────────────┐
+    │Post-Prediction Layer│ ← Suggests what comes NEXT
+    │ (After confirmation)│   After "会議" → suggests "は", "で", "を"
+    └─────────────────────┘
+           ↓
+    TEXT APPEARS IN APP
+```
 
 ---
 
-## Key Concepts
+---
 
-- **Keyboard Extension** - The input method that runs system-wide
-- **Main App** - Configuration and settings hub
-- **Conversion** - Kana to Kanji transformation
-- **Prediction** - Intelligent text suggestions
-- **Live Conversion** - Automatic real-time conversion
-- **Custom Keyboards** - User-defined layouts (Custard system)
-- **Themes** - Visual appearance customization
-- **Learning** - Adaptive behavior from user input
+## 📚 Study Guide: Key Concepts
+
+### What is azooKey?
+A Japanese keyboard app with two parts:
+1. **Main App** - Where you configure and customize
+2. **Keyboard Extension** - The actual keyboard you type on
+
+### Core Features to Understand
+
+#### 1️⃣ Custom Keyboards (Custard System)
+- **What**: Create your own keyboard layouts
+- **Where**: Main App → Customize
+- **Features**: Custom tabs, custom keys, custom names/labels
+- **Files**: `CustardManager.swift`, `UserMadeCustard.swift`
+
+#### 2️⃣ Emoji Keyboard
+- **What**: Emoji and kaomoji input
+- **Where**: Keyboard Extension → Emoji tab
+- **Features**: Categories, search, recent/frequent
+- **Data**: `azooKey_emoji_dictionary_storage/`
+
+#### 3️⃣ Localization
+- **What**: Multi-language support
+- **Where**: Throughout app and keyboard
+- **Files**: `Resources/Localizable.xcstrings`
+
+#### 4️⃣ Input Intelligence Pipeline
+The "brain" that converts your typing to Japanese text:
+
+**Step 1: Input Manager** (`InputManager.swift`)
+- Takes raw key presses
+- Converts romaji to kana (e.g., "ka" → "か")
+
+**Step 2: Prediction (Before)** (`PredictionManager.swift`)
+- Suggests words BEFORE you convert
+- Based on context and frequency
+
+**Step 3: Live Conversion** (`LiveConversionManager.swift`)
+- Optional: Auto-converts as you type
+- No need to press conversion key
+
+**Step 4: Conversion Engine** (Neural AI)
+- The AI that converts kana to kanji
+- Uses neural models: `zenz-v3.1-small-gguf/`
+- Uses dictionary: `azooKey_dictionary_storage/`
+- Data structure: LOUDS (fast lookups)
+
+**Step 5: Post-Prediction (After)**
+- Suggests what word comes NEXT
+- Learns from your patterns
+
+#### 5️⃣ Themes
+- **What**: Visual customization
+- **Where**: Main App → Theme
+- **Files**: `AzooKeyCore/Sources/KeyboardThemes/`
+- **Assets**: `Resources/Designs.xcassets/`
+
+#### 6️⃣ Action Management
+- **What**: Handles all user interactions
+- **Files**: `KeyboardActionManager.swift`
+- **Does**: Key presses, gestures, state coordination
 
 ---
 
-For more detailed information:
-- **Folder Structure:** See [FILE_1_PROJECT_FOLDERS.md](FILE_1_PROJECT_FOLDERS.md)
-- **Feature Details:** See [FILE_2_PROJECT_FEATURES.md](FILE_2_PROJECT_FEATURES.md)
-- **Build Instructions:** See [README.md](README.md)
-- **Development Guide:** See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
+## 📂 Where Things Live (File Locations)
+
+### Main App (`MainApp/`)
+```
+MainApp/
+├── ContentView.swift (main screen)
+├── Customize/ (custom keyboard builder)
+├── Theme/ (theme selection)
+├── Setting/ (settings screens)
+├── DataUpdateView/ (dictionary updates)
+├── EnableAzooKeyView/ (setup tutorial)
+└── Tips/ (help & tips)
+```
+
+### Keyboard Extension (`Keyboard/`)
+```
+Keyboard/
+├── Display/
+│   ├── KeyboardViewController.swift (entry point)
+│   ├── KeyboardActionManager.swift (actions)
+│   ├── InputManager.swift (input processing)
+│   ├── PredictionManager.swift (predictions)
+│   └── LiveConversionManager.swift (live conversion)
+└── Dictionary/ (dictionary data files)
+```
+
+### Shared Code (`AzooKeyCore/`)
+```
+AzooKeyCore/Sources/
+├── KeyboardViews/ (UI components)
+├── KeyboardThemes/ (theme system)
+├── KeyboardExtensionUtils/ (utilities)
+├── AzooKeyUtils/ (general utils)
+└── SwiftUIUtils/ (SwiftUI helpers)
+```
+
+---
+
+## 🎯 Quick Reference
+
+| Feature | Main Component | Location |
+|---------|---------------|----------|
+| Custom keyboards | CustardManager | `AzooKeyUtils/Custard/` |
+| Emoji input | Emoji dictionary | `azooKey_emoji_dictionary_storage/` |
+| Themes | ThemeManager | `KeyboardThemes/` |
+| Input processing | InputManager | `Keyboard/Display/` |
+| Predictions | PredictionManager | `Keyboard/Display/` |
+| Conversion (AI) | Neural models | `zenz-v3.1-*-gguf/` |
+| Localization | String catalog | `Resources/Localizable.xcstrings` |
+| Settings UI | Setting views | `MainApp/Setting/` |
+
+---
+
+## 🔗 Learn More
+
+- **Folder Structure**: [FILE_1_PROJECT_FOLDERS.md](FILE_1_PROJECT_FOLDERS.md)
+- **Feature Details**: [FILE_2_PROJECT_FEATURES.md](FILE_2_PROJECT_FEATURES.md)
+- **Build Instructions**: [README.md](README.md)
+- **Contributing**: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
