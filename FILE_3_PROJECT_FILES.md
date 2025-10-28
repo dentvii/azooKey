@@ -1,434 +1,355 @@
-# azooKey Project Files Reference
+# azooKey Application Architecture
 
-This document provides a reference for important files in the azooKey project and their purposes.
-
-## Root Level Files
-
-### `README.md`
-**Project overview and quick start guide**
-
-The main readme file providing:
-- Project description (in Japanese)
-- App Store and TestFlight links
-- Build instructions
-- Contribution guidelines
-- Links to documentation
+This document provides an architectural view of the azooKey application, organized to mirror how the application is represented from both a user and developer perspective. The application is split into two main views: **Keyboard** and **App**.
 
 ---
 
-### `LICENSE`
-**MIT License**
+## Keyboard View Architecture
 
-azooKey is licensed under the MIT License. Copyright (c) 2020-2025 Keita Miwa (ensan).
+The keyboard extension is the core input interface that users interact with when typing. It's a complex system comprising several layers and features.
 
----
+### 🎨 Visual & Presentation Layer
 
-### `.gitignore`
-**Git ignore rules**
+#### **Keyboard UI Components** (`AzooKeyCore/Sources/KeyboardViews/`)
+The visual representation of the keyboard that users see and touch.
 
-Specifies files and directories to exclude from version control (build artifacts, user-specific files, etc.).
+**Key Components:**
+- **Key Views** - Individual key buttons with various styles and states
+- **Key Layouts** - Different keyboard layouts (QWERTY, custom, emoji, etc.)
+- **Result Bar** - Conversion candidate display above the keyboard
+- **Cursor Bar** - Precise text cursor control (activated via long-press space)
+- **Tab Bar** - Quick access to custom tabs and settings (azooKey icon button)
 
----
-
-### `.gitmodules`
-**Git submodules configuration**
-
-Defines the dictionary storage submodules:
-- `azooKey_dictionary_storage`
-- `azooKey_emoji_dictionary_storage`
-
----
-
-### `.swiftlint.yml`
-**SwiftLint configuration**
-
-Code style and linting rules for maintaining consistent Swift code quality.
+**Supporting Infrastructure:**
+- `KeyboardViewController.swift` - Main entry point, orchestrates the entire keyboard UI
+- Theme system for visual customization
+- SwiftUI-based modern responsive interface
 
 ---
 
-## AzooKeyCore Files
+### ⌨️ Custom Keyboard System
 
-### `AzooKeyCore/Package.swift`
-**Swift Package Manager manifest**
-
-Defines the AzooKeyCore package structure:
-- Package dependencies
-- Target definitions
-- Platform requirements
-- Module exports
-
----
-
-### `AzooKeyCore/README.md`
-**AzooKeyCore documentation**
-
-Documentation specific to the shared core library modules.
-
----
-
-## MainApp Key Files
-
-### `MainApp/MainApp.swift`
-**Application entry point**
-
-The main SwiftUI `@main` App structure that launches the MainApp.
-
-**Key responsibilities:**
-- App lifecycle management
-- Initial setup
-- Root view configuration
-
----
-
-### `MainApp/ContentView.swift`
-**Main application view**
-
-The primary view displayed when users open the app.
+#### **Custom Keyboards** (`MainApp/Customize/`, `CustardKit`)
+Users can create fully customized keyboard layouts with their own keys and behaviors.
 
 **Features:**
-- Navigation structure
-- Main menu/dashboard
-- Access to all settings and features
+- **Custom Tabs** - Multiple user-defined keyboard layouts
+- **Custom Keys** - User-defined keys with custom actions and labels
+- **Key Names** - Customizable key labels and symbols
+- **Import/Export** - Share and load custom keyboard configurations
+- **Flick Keys** - Custom flick input patterns for advanced users
+
+**Implementation:**
+- `CustardManager.swift` - Manages custom keyboard definitions
+- `UserMadeCustard.swift` - User-created keyboard data structures
 
 ---
 
-### `MainApp/UpdateInformationView.swift`
-**Update changelog and information**
+### 😀 Emoji & Special Characters
 
-Displays what's new in recent updates, changelog, and version information.
+#### **Emoji Keyboard**
+Dedicated emoji and kaomoji input interface.
 
-**Size:** ~44KB - contains extensive update history
+**Features:**
+- Emoji picker with categories
+- Kaomoji (顔文字) support
+- Recent and frequently used tracking
+- Search functionality
 
----
-
-### `MainApp/Info.plist`
-**App configuration**
-
-iOS app configuration including:
-- Bundle identifier
-- Version information
-- Required permissions
-- Supported devices
-- Background modes
+**Data:**
+- `azooKey_emoji_dictionary_storage/` - Emoji dictionary submodule
+- Emoji conversion and suggestions
 
 ---
 
-### `MainApp/azooKey.entitlements`
-**App entitlements**
+### 🌍 Localization System
 
-Declares app capabilities and permissions required by the main app.
+#### **Multi-language Support** (`Resources/Localizable.xcstrings`)
+The keyboard interface is available in multiple languages.
 
----
-
-### `MainApp/PrivacyInfo.xcprivacy`
-**Privacy manifest**
-
-Declares privacy-related information and data usage for App Store compliance.
-
----
-
-## Keyboard Extension Key Files
-
-### `Keyboard/Display/KeyboardViewController.swift`
-**Keyboard extension entry point**
-
-The main view controller for the keyboard extension. This is where the keyboard lifecycle begins.
-
-**Key methods:**
-- `viewDidLoad()` - Initializes keyboard UI and managers
-- Entry point for all keyboard functionality
-
-**Size:** ~25KB
+**Components:**
+- Localized UI strings for all keyboard elements
+- Language-specific key layouts
+- Culturally appropriate input methods
+- `InfoPlist.xcstrings` - Localized system strings
 
 ---
 
-### `Keyboard/Display/KeyboardActionManager.swift`
-**Action handling and coordination**
+### 🧠 Input & Intelligence Layer
 
-Manages all user interactions with the keyboard.
+This is where the "magic" happens - converting user input into meaningful text.
+
+#### **Input Management** (`Keyboard/Display/InputManager.swift`)
+The brain of text input and conversion.
 
 **Responsibilities:**
-- Handle key presses
-- Coordinate with InputManager
-- Manage keyboard state
-- Process user actions
-
-**Size:** ~35KB - Core keyboard logic
+- Raw input processing (romaji → kana)
+- Composition state management
+- Interaction with conversion engine
+- Text buffer management
 
 ---
 
-### `Keyboard/Display/InputManager.swift`
-**Input and conversion management**
+#### **Prediction Layer** (`Keyboard/Display/PredictionManager.swift`)
+**Pre-Composition Prediction** - Suggestions before conversion
 
-Handles text input and manages the conversion process.
-
-**Key functions:**
-- Interact with KanaKanjiConverter API
-- Manage conversion state
-- Handle displayed text through DisplayedTextManager
-- Process input through LiveConversionManager
-
-**Size:** ~52KB - Largest file in Display/
+**Features:**
+- Context-aware word suggestions
+- Dictionary-based predictions
+- Learning from user input patterns
+- Frequency-based ranking
 
 ---
 
-### `Keyboard/Display/LiveConversionManager.swift`
-**Live conversion functionality**
+#### **Conversion Engine** (Neural Kana-Kanji Conversion)
+**The Core Intelligence** - Powered by Zenzai neural network
 
-Manages real-time conversion as users type.
+**Components:**
+- `zenz-v3.1-small-gguf/` and `zenz-v3.1-xsmall-gguf/` - Neural models
+- `Keyboard/Dictionary/louds/` - LOUDS dictionary data structure
+- `azooKey_dictionary_storage/` - Dictionary data submodule
+- External package: `AzooKeyKanaKanjiConverter`
 
-**Size:** ~7KB
-
----
-
-### `Keyboard/Display/PredictionManager.swift`
-**Prediction and suggestions**
-
-Handles predictive text and completion suggestions.
-
-**Size:** ~3KB
-
----
-
-### `Keyboard/Display/ReportSubmissionHelper.swift`
-**Error reporting and diagnostics**
-
-Helps collect and submit error reports and diagnostic information.
-
-**Size:** ~19KB
+**What it does:**
+- Converts kana input to kanji with high accuracy
+- Understands context and grammar
+- Learns from user corrections
+- Multiple conversion candidates
 
 ---
 
-### `Keyboard/Info.plist`
-**Keyboard extension configuration**
+#### **Post-Prediction Layer** (Post-Composition Prediction)
+**After confirmation** - Suggestions for what comes next
 
-Extension-specific configuration:
-- Extension point identifier
-- Principal class
-- Required settings
-
----
-
-### `Keyboard/Keyboard.entitlements`
-**Keyboard extension entitlements**
-
-Permissions and capabilities for the keyboard extension.
+**Features:**
+- Next word prediction after confirming text
+- Context-aware suggestions based on just-entered text
+- Phrase completion
+- Learned patterns from user behavior
 
 ---
 
-## Resources Files
+#### **Live Conversion** (`Keyboard/Display/LiveConversionManager.swift`)
+**Real-time automatic conversion** as you type (ライブ変換)
 
-### `Resources/Localizable.xcstrings`
-**Localized strings catalog**
-
-All user-facing text in multiple languages using the new string catalog format (.xcstrings).
-
-**Size:** ~281KB - Contains extensive translations
-
----
-
-### `Resources/InfoPlist.xcstrings`
-**Localized Info.plist strings**
-
-Localized versions of Info.plist keys.
+**Behavior:**
+- Automatically converts input to kanji without explicit conversion key presses
+- Fluid typing experience
+- Toggleable in settings
 
 ---
 
-### `Resources/AzooKeyIcon-Regular.otf`
-**Custom icon font**
+### 🎯 Action & Behavior Layer
 
-OpenType font file containing custom icons used throughout the app.
+#### **Action Management** (`Keyboard/Display/KeyboardActionManager.swift`)
+Handles all user interactions and coordinates keyboard behavior.
 
----
-
-## Project Configuration Files
-
-### `azooKey.xcodeproj/`
-**Xcode project**
-
-The Xcode project file that ties together all targets:
-- MainApp target
-- Keyboard extension target
-- Test targets
-- Build configurations
-- Signing settings
-
-**To open:** Double-click in Finder or run `open azooKey.xcodeproj`
+**Responsibilities:**
+- Key press handling
+- Touch gesture processing
+- Action coordination between components
+- State management across the keyboard
 
 ---
 
-## Documentation Files
+### 🎨 Theme & Styling Layer
 
-### `docs/overview.md`
-**Architecture overview (Japanese)**
+#### **Keyboard Themes** (`AzooKeyCore/Sources/KeyboardThemes/`)
+Visual customization system for keyboard appearance.
 
-Detailed explanation of project architecture:
-- Component descriptions
-- Data flow
-- Key concepts and terminology
-- Module relationships
+**Components:**
+- Color schemes
+- Key styling (borders, shadows, gradients)
+- Background options
+- Pre-built and custom themes
 
-**Size:** ~5KB
-
----
-
-### `docs/CONTRIBUTING.md`
-**Contribution guidelines**
-
-How to contribute to the project:
-- Development workflow
-- Code standards
-- PR process
-- Testing requirements
+**Resources:**
+- `Resources/Designs.xcassets/` - Theme colors and assets
+- `Resources/AzooKeyIcon-Regular.otf` - Custom icon font
 
 ---
 
-### `docs/tests.md`
-**Testing guide**
+### 📋 Additional Features
 
-Instructions for running and writing tests.
+#### **Clipboard History**
+Store and recall previously copied text.
 
----
+#### **Text Editing**
+Advanced cursor movement and text selection tools.
 
-### `docs/settings.md`
-**Settings documentation**
-
-Documentation of available settings and their effects.
-
----
-
-### `docs/keyboard_layout_behavior.md`
-**Keyboard layout behavior notes**
-
-Technical notes on keyboard layout behavior and edge cases.
+#### **Error Reporting** (`ReportSubmissionHelper.swift`)
+Diagnostic and error reporting capabilities.
 
 ---
 
-### `docs/clipboard_history.md`
-**Clipboard history feature**
+## App View Architecture
 
-Documentation for the clipboard history feature.
+The main application (MainApp) is the settings and configuration hub where users customize their keyboard experience.
 
----
+### ⚙️ Settings & Configuration Layer
 
-### `docs/advice_for_azooKey_based_development.md`
-**Development advice**
+#### **General Settings** (`MainApp/Setting/`, `MainApp/General/`)
+Core keyboard behavior configuration.
 
-Tips and best practices for developing with or extending azooKey.
-
----
-
-### `docs/view_controller_memory_leak.md`
-**Memory leak documentation**
-
-Known issues and solutions related to view controller memory management.
+**Features:**
+- Input method selection (romaji, direct kana)
+- Keyboard layout preferences
+- Feature toggles
+- Behavior customization
 
 ---
 
-## Dictionary Data Files
+#### **Theme Management** (`MainApp/Theme/`)
+Visual customization interface.
 
-### `Keyboard/Dictionary/louds/`
-**LOUDS data structure files**
-
-Contains dictionary data in LOUDS (Level-Order Unary Degree Sequence) format for efficient trie operations.
-
----
-
-### `Keyboard/Dictionary/cb/`
-**Callback dictionary data**
-
-Dictionary callback data files.
+**Features:**
+- Theme selection
+- Color customization
+- Preview functionality
+- Save and manage custom themes
 
 ---
 
-### `Keyboard/Dictionary/p/`
-**Prediction data**
+#### **Custom Keyboard Builder** (`MainApp/Customize/`)
+Interface for creating and managing custom keyboards.
 
-Data files for text prediction functionality.
-
----
-
-## Test Files
-
-### `azooKeyTests/`
-**Main test directory**
-
-Contains unit and integration tests for keyboard functionality.
+**Features:**
+- Visual keyboard layout editor
+- Key configuration
+- Tab management
+- Import/export custom layouts
 
 ---
 
-### `MainAppUITests/MainAppUITests.swift`
-**UI tests**
+### 📊 Data Management Layer
 
-Automated UI tests for the main application.
+#### **Dictionary Updates** (`MainApp/DataUpdateView/`)
+Keep conversion dictionaries current.
 
----
+**Features:**
+- Check for dictionary updates
+- Download and install new dictionary data
+- Version management
 
-## Build and Configuration Files
+#### **User Data** (`MainApp/DataSet/`)
+Manage user-specific data and learning.
 
-### `.swiftpm/`
-**Swift PM configuration** (in AzooKeyCore)
-
-Swift Package Manager build configuration and resolved dependencies.
-
----
-
-## File Naming Conventions
-
-### Swift Files
-- **PascalCase**: Class and struct names (e.g., `KeyboardViewController.swift`)
-- **Descriptive names**: Files named after their primary class/component
-- **Manager suffix**: Classes that coordinate functionality (e.g., `InputManager.swift`)
-- **View suffix**: SwiftUI views (e.g., `ContentView.swift`)
-
-### Resource Files
-- **PascalCase**: Asset catalogs (e.g., `Assets.xcassets`)
-- **lowercase with extension**: Standard resources (e.g., `.xcstrings`, `.plist`)
-
-### Documentation Files
-- **UPPERCASE**: Important docs (e.g., `README.md`, `LICENSE`, `CONTRIBUTING.md`)
-- **snake_case**: Technical docs (e.g., `clipboard_history.md`)
+**Features:**
+- User dictionary entries
+- Learning data management
+- Backup and restore
+- Data reset options
 
 ---
 
-## Finding Specific Files
+### 🎓 Onboarding & Help Layer
 
-### Quick reference by task:
+#### **Keyboard Setup** (`MainApp/EnableAzooKeyView/`)
+Tutorial for enabling the keyboard extension.
 
-**Modifying keyboard behavior:**
-- Start with `Keyboard/Display/KeyboardActionManager.swift`
-- Check `Keyboard/Display/InputManager.swift`
+**Features:**
+- Step-by-step installation guide
+- System settings navigation
+- Verification of successful installation
 
-**Changing app UI:**
-- Main app: `MainApp/ContentView.swift`
-- Settings: `MainApp/Setting/`
-- Keyboard UI: `AzooKeyCore/Sources/KeyboardViews/`
+#### **Tips & Help** (`MainApp/Tips/`)
+User guidance and feature discovery.
 
-**Updating localization:**
-- Modify `Resources/Localizable.xcstrings`
+**Features:**
+- Feature explanations
+- Usage tips
+- Helpful hints for new users
 
-**Working with themes:**
-- Theme system: `AzooKeyCore/Sources/KeyboardThemes/`
-- Theme UI: `MainApp/Theme/`
-
-**Adding tests:**
-- Keyboard tests: `azooKeyTests/KeyboardTests/`
-- UI tests: `MainAppUITests/`
-
-**Documentation updates:**
-- User docs: `docs/`
-- Technical overview: `docs/overview.md`
-- Contributing: `docs/CONTRIBUTING.md`
+#### **Update Information** (`UpdateInformationView.swift`)
+Changelog and version history.
 
 ---
 
-## File Sizes Reference
+### 🔧 Developer & Internal Settings
 
-Largest source files:
-1. `Keyboard/Display/InputManager.swift` - ~52KB
-2. `MainApp/UpdateInformationView.swift` - ~44KB
-3. `Keyboard/Display/KeyboardActionManager.swift` - ~35KB
-4. `Keyboard/Display/KeyboardViewController.swift` - ~25KB
+#### **Internal Settings** (`MainApp/InternalSetting/`)
+Advanced options for developers and power users.
 
-Largest resource:
-- `Resources/Localizable.xcstrings` - ~281KB (all translations)
+**Features:**
+- Debug options
+- Experimental features
+- Performance metrics
+- Detailed configuration
+
+---
+
+## Shared Core Infrastructure
+
+### 🎁 AzooKeyCore Package
+
+A Swift Package containing shared functionality between keyboard and app.
+
+**Modules:**
+- `KeyboardViews/` - Shared UI components
+- `KeyboardThemes/` - Theme system
+- `KeyboardExtensionUtils/` - Keyboard utilities
+- `AzooKeyUtils/` - General utilities
+- `SwiftUIUtils/` - SwiftUI helpers
+
+---
+
+## Data Flow Summary
+
+```
+User Input (Key Press)
+    ↓
+KeyboardActionManager (Action Processing)
+    ↓
+InputManager (Input Processing)
+    ↓
+┌─────────────────────────────────────┐
+│  Prediction Layer (Pre-composition)  │ ← Dictionary Data
+└─────────────────────────────────────┘
+    ↓
+LiveConversionManager (Optional real-time conversion)
+    ↓
+Neural Conversion Engine (Kana → Kanji)
+    ↓
+Candidate Display (Result Bar)
+    ↓
+User Selection
+    ↓
+┌─────────────────────────────────────┐
+│ Post-Prediction Layer (Next word)    │ ← Learning Data
+└─────────────────────────────────────┘
+    ↓
+Text Output (To Application)
+```
+
+---
+
+## Technology Stack
+
+- **Language:** Swift, SwiftUI
+- **Platform:** iOS, iPadOS
+- **Architecture:** App Extension + Main App
+- **AI/ML:** Neural network (Zenzai) for conversion
+- **Data Structures:** LOUDS for efficient dictionary lookups
+- **Package Management:** Swift Package Manager
+- **Build System:** Xcode
+
+---
+
+## Key Concepts
+
+- **Keyboard Extension** - The input method that runs system-wide
+- **Main App** - Configuration and settings hub
+- **Conversion** - Kana to Kanji transformation
+- **Prediction** - Intelligent text suggestions
+- **Live Conversion** - Automatic real-time conversion
+- **Custom Keyboards** - User-defined layouts (Custard system)
+- **Themes** - Visual appearance customization
+- **Learning** - Adaptive behavior from user input
+
+---
+
+For more detailed information:
+- **Folder Structure:** See [FILE_1_PROJECT_FOLDERS.md](FILE_1_PROJECT_FOLDERS.md)
+- **Feature Details:** See [FILE_2_PROJECT_FEATURES.md](FILE_2_PROJECT_FEATURES.md)
+- **Build Instructions:** See [README.md](README.md)
+- **Development Guide:** See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
